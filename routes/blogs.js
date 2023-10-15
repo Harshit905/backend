@@ -37,12 +37,27 @@ router.get('/fetchuserblogs', fetchuser, async (req, res) => {
 
 })
 
+
+// Endpoint to fetch a single blog post by ID
+router.get('/readblog/:id', (req, res) => {
+    const postId = req.params.id;
+  
+    Blog.findById(postId, (err, blog) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send('Error retrieving blog post.');
+      } else {
+        res.json(blog);
+      }
+    });
+});
+
 // router.use('/images',imageUploadRouter);
 //add a blog by user
 router.post('/addblog', fetchuser, [
-    body('title', 'enter a valid title').isLength({ min: 3 }),
-    body('content', 'content must be atleast 5 characters').isLength({ min: 5 }),
-    body('inbrief', 'inbrief must be atleast 5 characters').isLength({ min: 5 }),
+    body('title', 'enter a valid title of min 10 characters').isLength({ min: 10 }),
+    body('content', 'content must be atleast 80 characters').isLength({ min: 100 }),
+    body('inbrief', 'inbrief must be atleast 5 characters').isLength({ min: 20 }),
     body('author', 'author must be atleast 5 characters').isLength({ min: 2 }),
     body('tag', 'tag must be atleast 5 characters').isLength({ min: 5 })
 ], async (req, res) => {
@@ -58,7 +73,7 @@ router.post('/addblog', fetchuser, [
             title, content, tag, user: req.user.id, inbrief, author
         })
         const saveBlog = await blog.save()
-
+        
 
         res.json(saveBlog);
     } catch (error) {
