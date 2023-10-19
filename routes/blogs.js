@@ -56,9 +56,9 @@ router.get('/readblog/:id', (req, res) => {
 //add a blog by user
 router.post('/addblog', fetchuser, [
     body('title', 'enter a valid title of min 10 characters').isLength({ min: 10 }),
-    body('content', 'content must be atleast 80 characters').isLength({ min: 100 }),
-    body('inbrief', 'inbrief must be atleast 5 characters').isLength({ min: 20 }),
-    body('author', 'author must be atleast 5 characters').isLength({ min: 2 }),
+    body('content', 'content must be atleast 100 characters').isLength({ min: 100 }),
+    body('inbrief', 'inbrief must be atleast 20 characters').isLength({ min: 20 }),
+    body('author', 'author must be atleast 2 characters').isLength({ min: 2 }),
     body('tag', 'tag must be atleast 5 characters').isLength({ min: 5 })
 ], async (req, res) => {
     try {
