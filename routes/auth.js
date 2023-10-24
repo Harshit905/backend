@@ -45,17 +45,12 @@ router.post('/createuser', [
             about_yourself:req.body.about_yourself
         })
 
-
-        // .then (user => res.json (user))
-        // .catch(err=> {console.log(err)
-        // res.json({error: 'Please enter a unique value for email', message: err.message})})
         const data = {
             user: {
                 id: user.id
             }
         }
         const authToken = jwt.sign(data, JWT_SECRET);
-        // console.log(authToken)
         success=true;
         res.json({success,authToken})
     } catch (error) {
