@@ -15,5 +15,5 @@ app.use("/api/notes",require('./routes/notes'))
 app.use("/api/blogs",require('./routes/blogs'))
 
 app.listen(port, () => {
-    console.log(`i-notebook backend listening on port ${port}`)
+    console.log(`BlogCanvas backend listening on port ${port}`)
 })

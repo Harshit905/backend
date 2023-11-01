@@ -30,11 +30,5 @@ const BlogSchema = new Schema({
         type: Date,
         default: Date.now
     }
-    // filename: {
-    //     type: String
-    // },
-    // fileId: {
-    //     type: String
-    // }
 });
 module.exports = mongoose.model('blogs', BlogSchema);

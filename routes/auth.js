@@ -1,12 +1,13 @@
+var jwt = require('jsonwebtoken');
+const User = require("../models/User");
+const JWT_SECRET = "Harryisagoodguy";
+
 const express = require('express');
 var bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
-const User = require("../models/User");
 const router = express.Router();
-var jwt = require('jsonwebtoken');
 // router.use(express.json());
 var fetchuser=require('../middleware/fetchuser')
-const JWT_SECRET = "Harryisagoodguy";
 
 //create a user using: POST "/api/auth/createuser".
 
@@ -31,6 +32,10 @@ router.post('/createuser', [
         let registration=await User.findOne({ email: req.body.email });
         if (user || registration) {
             return res.status(400).json({success, error: "email/registration already exists" })
+        }
+        if (!req.body.email.includes("@") && !req.body.email.includes(".")) {
+            res.status(400).json({success, error: "Invalid Email" })
+      
         }
         user = await User.create({
             name: req.body.name,
