@@ -26,6 +26,30 @@ const BlogSchema = new Schema({
         type: String,
         required: true,
     },
+    likes: {
+        type: Array,
+        default: []
+      },
+    comments: [
+        {
+          userId: {
+            type: String,
+            // required: true
+          },
+          info: {
+            type: String,
+            // required: true
+          },
+          blogId: {
+            type: String,
+            // required: true
+          }
+        }
+      ],
+    category: {
+        type: String,
+        required: true
+    },
     date: {
         type: Date,
         default: Date.now
