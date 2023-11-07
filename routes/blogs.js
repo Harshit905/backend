@@ -9,7 +9,7 @@
 const express = require('express');
 var fetchuser = require('../middleware/fetchuser')
 const router = express.Router();
-const Users = require('../models/User');
+const User = require('../models/User');
 const Blog = require('../models/Blog');
 const { body, validationResult } = require('express-validator');
 
@@ -26,9 +26,9 @@ const monthNames = [
     "Oct",
     "Nov",
     "Dec",
-  ];
-  let totalBlogs = 0;
-  
+];
+let totalBlogs = 0;
+
 //fetch all the blogs
 router.get('/fetchallblogs', async (req, res) => {
     try {
@@ -53,18 +53,41 @@ router.get('/fetchuserblogs', fetchuser, async (req, res) => {
 
 })
 
-
+router.get('/bookmarked-blogs', fetchuser, async (req, res) => {
+    try {
+      // Get the user's ID from the authenticated user
+      const userId = req.user.id;
+  
+      // Find the user by their ID
+      const user = await User.findById(userId);
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      // Fetch the user's bookmarked blog IDs
+      const bookmarkedBlogIds = user.bookmarks;
+  
+      // Query the blogs collection to retrieve bookmarked blogs
+      const bookmarkedBlogs = await Blog.find({ _id: { $in: bookmarkedBlogIds } });
+  
+      return res.json(bookmarkedBlogs);
+    } catch (error) {
+      console.error('Error fetching bookmarked blogs:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
 // Endpoint to fetch a single blog post by ID
 router.get('/readblog/:id', (req, res) => {
     const postId = req.params.id;
-  
+
     Blog.findById(postId, (err, blog) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send('Error retrieving blog post.');
-      } else {
-        res.json(blog);
-      }
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error retrieving blog post.');
+        } else {
+            res.json(blog);
+        }
     });
 });
 
@@ -81,7 +104,7 @@ router.post('/addblog', fetchuser, [
     try {
 
 
-        const { title, content, tag, inbrief, author,category } = req.body;
+        const { title, content, tag, inbrief, author, category } = req.body;
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
@@ -90,7 +113,7 @@ router.post('/addblog', fetchuser, [
             title, content, tag, user: req.user.id, inbrief, author, category
         })
         const saveBlog = await blog.save()
-        
+
 
         res.json(saveBlog);
     } catch (error) {
@@ -100,7 +123,7 @@ router.post('/addblog', fetchuser, [
 })
 //update a blog by user
 router.put('/updateblog/:id', fetchuser, async (req, res) => {
-    const { title, content, tag, inbrief, author,category } = req.body;
+    const { title, content, tag, inbrief, author, category } = req.body;
     try {
         // Create a newBlog object
         const newBlog = {};
@@ -125,7 +148,7 @@ router.put('/updateblog/:id', fetchuser, async (req, res) => {
         res.status(500).send("Internal Server Error in updating");
     }
 })
- 
+
 //delete blog
 router.delete('/deleteblog/:id', fetchuser, async (req, res) => {
     try {
@@ -150,186 +173,191 @@ router.delete('/deleteblog/:id', fetchuser, async (req, res) => {
 router.get("/blogsByAuthorId/:id", async (req, res) => {
     const { id } = req.params;
     try {
-      const blogs = await Blog.find({ user: id });
-      res.json({ Blogs: blogs });
+        const blogs = await Blog.find({ user: id });
+        res.json({ Blogs: blogs });
     } catch (error) {
-      res.json({ err: error });
+        res.json({ err: error });
     }
-  });
-  router.get("/categorycount", async (req, res) => {
+});
+router.get("/categorycount", async (req, res) => {
     try {
-      const blockchain = await Blog.find({ category: "Blockchain" });
-      const fashion = await Blog.find({ category: "Fashion" });
-      const technology = await Blog.find({ category: "Technology" });
-      const Business = await Blog.find({ category: "Business" });
-      const health = await Blog.find({ category: "Health" });
-      const fitness = await Blog.find({ category: "Fitness" });
-      const javascript = await Blog.find({ category: "javascript" });
-      res.json({
-        blockchain: blockchain.length,
-        fashion: fashion.length,
-        technology: technology.length,
-        business: Business.length,
-        health: health.length,
-        fitness: fitness.length,
-        javascript: javascript.length,
-      });
+        const blockchain = await Blog.find({ category: "Blockchain" });
+        const fashion = await Blog.find({ category: "Fashion" });
+        const technology = await Blog.find({ category: "Technology" });
+        const Business = await Blog.find({ category: "Business" });
+        const health = await Blog.find({ category: "Health" });
+        const fitness = await Blog.find({ category: "Fitness" });
+        const javascript = await Blog.find({ category: "javascript" });
+        res.json({
+            blockchain: blockchain.length,
+            fashion: fashion.length,
+            technology: technology.length,
+            business: Business.length,
+            health: health.length,
+            fitness: fitness.length,
+            javascript: javascript.length,
+        });
     } catch (error) {
-      res.json(error);
+        res.json(error);
     }
-  });
-  router.get("/category/:category", async (req, res) => {
+});
+router.get("/category/:category", async (req, res) => {
     const { category } = req.params;
-  
+
     try {
-   
-      const blogs = await Blog.find({ category: category });
-  
-      if (blogs) {
-        // Create an object containing both arrays
-        res.json(blogs);
-      } else {
-        res.json({ message: "No Blogs Available" });
-      }
+
+        const blogs = await Blog.find({ category: category });
+
+        if (blogs) {
+            // Create an object containing both arrays
+            res.json(blogs);
+        } else {
+            res.json({ message: "No Blogs Available" });
+        }
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Internal Server Error" });
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
     }
-  });
-  
-  router.get("/blogscount", (req, res) => {
+});
+
+router.get("/blogscount", (req, res) => {
     Blog.count(function (err, count) {
-      if (err) res.send(err);
-      res.json({ count: count });
+        if (err) res.send(err);
+        res.json({ count: count });
     });
-  });
+});
 
-  router.get("/search/title?", async (req, res) => {
+router.get("/search/title?", async (req, res) => {
     const { q } = req.query; // Extract the "q" query parameter from the request
-  
+
     try {
-      // Use the Mongoose model "Blog" to search for blogs
-      const blogs = await Blog.find({ title: { $regex: q, $options: "i" } });
-      
-      // Send a JSON response containing the search results
-      res.json(blogs);
+        // Use the Mongoose model "Blog" to search for blogs
+        const blogs = await Blog.find({ title: { $regex: q, $options: "i" } });
+
+        // Send a JSON response containing the search results
+        res.json(blogs);
     } catch (error) {
-      // Handle any errors that occur during the search
-      res.json(error);
+        // Handle any errors that occur during the search
+        res.json(error);
     }
-  });
+});
 
- router.get("/search/category?", async (req, res) => {
-  const { q } = req.query; // Extract the "q" query parameter from the request
+router.get("/search/category?", async (req, res) => {
+    const { q } = req.query; // Extract the "q" query parameter from the request
 
-  try {
-    // Use the Mongoose model "Blog" to search for blogs
-    const blogs = await Blog.find({ category: { $regex: q, $options: "i" } });
-    
-    // Send a JSON response containing the search results
-    res.json(blogs);
-  } catch (error) {
-    // Handle any errors that occur during the search
-    res.json(error);
-  }
+    try {
+        // Use the Mongoose model "Blog" to search for blogs
+        const blogs = await Blog.find({ category: { $regex: q, $options: "i" } });
+
+        // Send a JSON response containing the search results
+        res.json(blogs);
+    } catch (error) {
+        // Handle any errors that occur during the search
+        res.json(error);
+    }
 });
 router.get("/search/tag?", async (req, res) => {
     const { q } = req.query; // Extract the "q" query parameter from the request
-  
+
     try {
-      // Use the Mongoose model "Blog" to search for blogs
-      const blogs = await Blog.find({ tag: { $regex: q, $options: "i" } });
-      
-      // Send a JSON response containing the search results
-      res.json(blogs);
+        // Use the Mongoose model "Blog" to search for blogs
+        const blogs = await Blog.find({ tag: { $regex: q, $options: "i" } });
+
+        // Send a JSON response containing the search results
+        res.json(blogs);
     } catch (error) {
-      // Handle any errors that occur during the search
-      res.json(error);
+        // Handle any errors that occur during the search
+        res.json(error);
     }
-  });
+});
 
-
-  router.patch("/bookmarks/:id", async (req, res) => {
-    const { id } = req.params;
-    const { userId } = req.body;
-    const blog = await Blog.findOne({ _id: id });
-    const user = await Users.findOne({ _id: userId });
-    if (user) {
-      try {
-        if (!user.bookmarks.includes(id)) {
-          await user.updateOne({ $push: { bookmarks: id } });
-          res.json("Bookmarked");
-        } else {
-          res.json("already Bookmarked");
-        }
-      } catch (error) {}
-    }
-  });
-//   router.patch("/bookmark/:id", async (req, res) => {
+//   router.patch("/bookmarks/:id",fetchuser,async (req, res) => {
 //     const { id } = req.params;
-    // const { userId } = req.body;
-    // blog.user.toString() !== req.user.id
-    // console.log(id, req.user.id);
-    // const blog = await Blog.findOne({ _id: id });
-    // const user = await Users.findOne({ _id: userId });
-    // if (user) {
-    //   try {
-    //     if (!user.bookmarks.includes(id)) {
-    //       await user.updateOne({ $push: { bookmarks: id } });
-    //       res.json("Bookmarked");
-    //     } else {
-    //       res.json("already Bookmarked");
-    //     }
-    //   } catch (error) {}
-    // }
+//     console.log(id, req.user.id);
+//     const blog = await Blog.findOne({ _id: id });
+//     const user = await User.findOne({ _id: req.user.id });
+//     if (user) {
+//       try {
+//         if (!user.bookmarks.includes(id)) {
+//           await user.updateOne({ $push: { bookmarks: id } });
+//           res.json("Bookmarked");
+//         } else {
+//           res.json("already Bookmarked");
+//         }
+//       } catch (error) {}
+//     }
 //   });
-  router.patch("/unbookmark/:id", async (req, res) => {
-    const { id } = req.params;
-    const { userId } = req.body;
-    const blog = await Blog.findOne({ _id: id });
-    const user = await Users.findOne({ _id: userId });
-    if (user) {
-      try {
-        if (user.bookmarks.includes(id)) {
-          await user.updateOne({ $pull: { bookmarks: id } });
-          res.json("unbookmarked");
+router.patch("/bookmark/:id", fetchuser, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findOne({ _id: req.user.id });
+
+        if (user) {
+            if (!user.bookmarks.includes(id)) {
+                await user.updateOne({ $push: { bookmarks: id } });
+                res.json("Bookmarked");
+            } else {
+                res.json("Already Bookmarked");
+            }
         } else {
-          res.json("bookmark first");
+            res.status(404).json("User not found");
         }
-      } catch (error) {}
+    } catch (error) {
+        console.error(error);
+        res.status(500).json("Internal Server Error");
     }
-  });
-  router.patch("/like/:id", async (req, res) => {
+});
+
+router.patch("/unbookmark/:id", fetchuser, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findOne({ _id: req.user.id });
+
+        if (user) {
+            if (user.bookmarks.includes(id)) {
+                await user.updateOne({ $pull: { bookmarks: id } });
+                res.json("Unbookmarked");
+            } else {
+                res.json("Please bookmark first");
+            }
+        } else {
+            res.status(404).json("User not found");
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json("Internal Server Error");
+    }
+});
+
+router.patch("/like/:id", fetchuser, async (req, res) => {
     const { id } = req.params;
-    const { userId } = req.body;
     const blog = await Blog.findOne({ _id: id });
     if (blog) {
-      if (!blog.likes.includes(userId)) {
-        await blog.updateOne({ $push: { likes: userId } });
-        res.json("Liked");
-      } else {
-        res.json("You already liked it");
-      }
+        if (!blog.likes.includes(req.user.id)) {
+            await blog.updateOne({ $push: { likes: req.user.id } });
+            res.json("Liked");
+        } else {
+            res.json("You already liked it");
+        }
     } else {
-      res.json("No blogs found");
+        res.json("No blogs found");
     }
-  });
-  router.patch("/unlike/:id", async (req, res) => {
+});
+router.patch("/unlike/:id", fetchuser, async (req, res) => {
     const { id } = req.params;
-    const { userId } = req.body;
     const blog = await Blog.findOne({ _id: id });
     if (blog) {
-      if (blog.likes.includes(userId)) {
-        await blog.updateOne({ $pull: { likes: userId } });
-        res.json("unliked");
-      } else {
-        res.json("You never liked it ");
-      }
+        if (blog.likes.includes(req.user.id)) {
+            await blog.updateOne({ $pull: { likes: req.user.id } });
+            res.json("unliked");
+        } else {
+            res.json("You never liked it ");
+        }
     } else {
-      res.json("No blogs found");
+        res.json("No blogs found");
     }
-  });
-  router.patch("/test", (req, res) => {
+});
+router.patch("/test", (req, res) => {
     console.log(req.body);
-  });
+});
 module.exports = router;
